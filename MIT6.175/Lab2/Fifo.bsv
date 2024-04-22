@@ -17,48 +17,43 @@ endinterface
 // (enq, deq, first) that your module should define.
 module mkFifo(Fifo#(3,t)) provisos (Bits#(t,tSz));
    // define your own 3-elements fifo here.
-    Reg#(Maybe#(t)) d[3];
-    for(Integer i = 0; i < 3; i = i + 1) begin
-        d[i] <- mkReg(tagged Invalid);
+    Reg #(t) elements[3];
+    for (Integer i = 0 ; i < 3 ;  i = i + 1)
+    begin 
+        elements[i] <- mkRegU;
     end
+    Reg #(Bit#(2)) cur_start <- mkReg(0);
+    Reg #(Bit#(2)) cur_next <- mkReg(0);
+    Reg #(Bit#(2)) current_cap <- mkReg(0);
 
-    // Enq if there's at least one spot open... so, dc is invalid.
-    method Action enq(t x) if (!isValid (d[2]));
-        if (!isValid (d[0])) begin
-            d[0] <= tagged Valid x;
-        end
-        else if(!isValid (d[1])) begin
-            d[1] <= tagged Valid x;
-        end
-        else begin
-            d[2] <= tagged Valid x;
-        end
+    function Bit#(2) next(Bit#(2) x);
+        if (x == 2) begin return 0; end 
+        else return x + 1;
+    endfunction
+    
+
+    method t first;
+        return elements[cur_start];
     endmethod
 
-    // Deq if there's a valid d[0]ta at d[0]
-    method Action deq() if (isValid (d[0]));
-        if (isValid (d[1])) begin
-            d[0] <= d[1];
-            d[1] <= d[2];
-            d[2] <= tagged Invalid;
-        end
-        else begin
-            d[0] <= tagged Invalid;
-        end
+    method Bool notEmpty() ;
+        return current_cap > 0;
     endmethod
 
-    // First if there's a valid data at d[0]
-    method t first() if (isValid (d[0]));
-        return fromMaybe (?, d[0]);
+    method Bool notFull() ;
+        return current_cap < 3;
     endmethod
 
-    // Check if fifo's empty
-    method Bool notEmpty();
-        return isValid(d[0]);
+    method Action enq(t x) if (current_cap < 3);
+        elements[cur_next] <= x;
+        if (current_cap == 0) begin cur_start <= cur_next; end
+        current_cap <= current_cap + 1;
+        cur_next <= next(cur_next);
     endmethod
 
-    method Bool notFull();
-        return !isValid(d[2]);
+    method Action deq() if (current_cap > 0);
+        cur_start <= next(cur_start);
+        current_cap <= current_cap - 1;
     endmethod
 
 endmodule
