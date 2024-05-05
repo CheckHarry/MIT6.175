@@ -15,16 +15,11 @@ endfunction
 
 // Multiplication by repeated addition
 function Bit#(TAdd#(n,n)) multiply_by_adding(Bit#(n) a, Bit#(n) b);
-    Bit#(n) carry = 0;
-    Bit#(n) res = 0;
-
-    for(Integer i = 0; i < valueOf(n); i = i + 1)
-    begin
-        Bit#(TAdd#(1,n)) sum = zeroExtend(carry) + ((b[i] == 1) ? zeroExtend(a) : 0);
-        res[i] = sum[0];
-        carry = truncateLSB(sum);
+    Bit# (TAdd#(n , n)) result = 0;
+    for (Integer i = 0 ; i < valueOf(n) ; i = i + 1)
+    begin 
+            
     end
-    return {carry, res};
 endfunction
 
 // Multiplier Interface
