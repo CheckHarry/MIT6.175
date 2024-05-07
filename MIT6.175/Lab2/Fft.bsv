@@ -93,25 +93,22 @@ module mkFftInelasticPipeline(Fft);
     endfunction
 
     rule doFft;
+        
+        //Vector#(4, Vector#(FftPoints, ComplexData)) stage_data;
+        if (isValid(sReg2) && outFifo.notFull) begin outFifo.enq(stage_f(2 , fromMaybe(? , sReg2))); end
 
-        // At stage 0, doing the first bfly + permute stage.
-        if(inFifo.notEmpty) begin
-            sReg1 <= tagged Valid (stage_f(0, inFifo.first));
+        if (isValid(sReg1)) 
+        begin 
+            sReg2 <= tagged Valid stage_f(1 , fromMaybe(? , sReg1)); 
+        end else begin 
+            sReg2 <= tagged Invalid; 
+        end
+
+        if (inFifo.notEmpty) begin
+            sReg1 <= tagged Valid stage_f(0 , inFifo.first); 
             inFifo.deq;
-        end
-        else begin
+        end else begin 
             sReg1 <= tagged Invalid;
-        end
-
-        // At stage 1, doing the second bfly + permute
-        case (sReg1) matches
-            tagged Invalid: sReg2 <= tagged Invalid;
-            tagged Valid .x: sReg2 <= tagged Valid stage_f(1, x);
-        endcase
-
-        // Last stage
-        if (isValid(sReg2)) begin
-            outFifo.enq(stage_f(2, fromMaybe(?, sReg2)));
         end
 
     endrule
@@ -158,21 +155,21 @@ module mkFftElasticPipeline(Fft);
     endfunction
 
     // You should use more than one rule
-    rule stage0 if (inFifo.notEmpty && fifo1.notFull);
-        fifo1.enq(stage_f(0, inFifo.first));
+    rule doFft0 if (fifo1.notFull && inFifo.notEmpty);
         inFifo.deq;
+        fifo1.enq(stage_f(0 , inFifo.first));
     endrule
 
-    rule stage1 if (fifo1.notEmpty && fifo2.notFull);
-        fifo2.enq(stage_f(1, fifo1.first));
+    rule doFft1 if (fifo2.notFull && fifo1.notEmpty);
         fifo1.deq;
+        fifo2.enq(stage_f(1 , fifo1.first));
     endrule
 
-    rule stage2 if (fifo2.notEmpty && outFifo.notFull);
-        outFifo.enq(stage_f(2, fifo2.first));
+    rule doFft2 if (outFifo.notFull && fifo2.notEmpty);
         fifo2.deq;
+        outFifo.enq(stage_f(2 , fifo2.first));
     endrule
-
+  
     method Action enq(Vector#(FftPoints, ComplexData) in);
         inFifo.enq(in);
     endmethod

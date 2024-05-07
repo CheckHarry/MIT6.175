@@ -25,8 +25,7 @@ function Bit#(TAdd#(n,n)) multiply_by_adding(Bit#(n) a, Bit#(n) b);
         end
     end
 
-    return to_return;
-    
+    return to_return;    
 endfunction
 
 // Multiplier Interface
