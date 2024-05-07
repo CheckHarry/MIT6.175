@@ -154,41 +154,58 @@ endmodule
 module mkBoothMultiplierRadix4( Multiplier#(n) )
 	provisos(Mul#(a__, 2, n), Add#(1, b__, a__)); // make sure n >= 2 and n is even
 
-    Reg#(Bit#(TAdd#(TAdd#(n,n),2))) m_pos <- mkRegU;
-    Reg#(Bit#(TAdd#(TAdd#(n,n),2))) m_neg <- mkRegU;
-    Reg#(Bit#(TAdd#(TAdd#(n,n),2))) p <- mkRegU;
-    Reg#(Bit#(TAdd#(TLog#(n),1))) i <- mkReg( fromInteger(valueOf(n)/2+1) );
+    Reg#(Bit#(n)) i <- mkReg(0);
+    Reg#(Bool) srdy <- mkReg(True);
+    Reg#(Bit#(TAdd#(TAdd#(n , n) , 2))) m_pos <- mkRegU();
+    Reg#(Bit#(TAdd#(TAdd#(n , n) , 2))) m_neg <- mkRegU();
+    Reg#(Bit#(TAdd#(TAdd#(n , n) , 2))) p <- mkRegU();
 
-    rule mul_step(i < fromInteger(valueOf(n))/2);
-        let pr  = p[2:0];
-        Bit#(TAdd#(TAdd#(n, n), 2)) temp = p;
-
-        if ((pr == 3'b001) || (pr == 3'b010)) begin temp = p + m_pos; end
-        if ((pr == 3'b101) || (pr == 3'b110)) begin temp = p + m_neg; end
-        if (pr == 3'b011) begin temp = p + arth_shift(m_pos, 1, False); end
-        if (pr == 3'b100) begin temp = p + arth_shift(m_neg, 1, False); end
-
-        p <= arth_shift(temp, 2, True);
-        i <= i + 1;
+    rule mul_step(i < fromInteger(valueOf(n)));
+        Bit#(3) pr = p[2:0];
+        Int#(TAdd#(TAdd#(n , n) , 2)) pnext = unpack(p);
+        Int#(TAdd#(TAdd#(n , n) , 2)) m_pos_int = unpack(m_pos);
+        Int#(TAdd#(TAdd#(n , n) , 2)) m_neg_int = unpack(m_neg);
+        if (pr == 3'b001 || pr == 3'b010)
+        begin 
+            p <= pack((pnext + m_pos_int) >> 2);
+        end
+        else if (pr == 3'b110 || pr == 3'b101)
+        begin 
+            p <= pack((pnext + m_neg_int) >> 2);
+        end
+        else if (pr == 3'b011)
+        begin
+            p <= pack((pnext + (m_pos_int << 1)) >> 2);
+        end
+        else if (pr == 3'b100)
+        begin
+            p <= pack((pnext + (m_neg_int << 1)) >> 2);
+        end
+        else
+        begin
+            p <= pack(pnext >> 2);
+        end
+        i <= i + 2;
     endrule
 
     method Bool start_ready();
-        return i == fromInteger(valueOf(n)/2 + 1);
+        return srdy;
     endmethod
 
-    method Action start( Bit#(n) m, Bit#(n) r ) if (i == fromInteger(valueOf(n)/2 + 1));
-        m_pos <= {msb(m), m, 0};
-        m_neg <= {msb(-m), -m, 0};
-        p <= {0, r, 1'b0};
+    method Action start( Bit#(n) m, Bit#(n) r ) if (srdy);
+        m_pos <= {msb(m) , m , 0};
+        m_neg <= {msb(-m) , -m , 0};
+        p <= {0 , r , 1'b0};
         i <= 0;
+        srdy <= False;
     endmethod
 
     method Bool result_ready();
-        return i == fromInteger(valueOf(n)/2);
+        return (i == fromInteger(valueOf(n)));
     endmethod
 
-    method ActionValue#(Bit#(TAdd#(n,n))) result() if (i == fromInteger(valueOf(n)/2));
-        i <= i + 1;
-        return p [(2*valueOf(n)):1];
+    method ActionValue#(Bit#(TAdd#(n,n))) result() if (i == fromInteger(valueOf(n)));
+        srdy <= True;
+        return  p[2 * valueOf(n):1];
     endmethod
 endmodule
