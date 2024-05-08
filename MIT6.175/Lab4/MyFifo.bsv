@@ -146,7 +146,7 @@ module mkMyBypassFifo( Fifo#(n, t) ) provisos (Bits#(t,tSz));
             nextEnqP = 0;
         end
         if (nextEnqP == deqP[0]) begin
-            notFull[0] <= False;
+            nFull[0] <= False;
         end
         enqP[0] <= nextEnqP;
     endmethod
@@ -199,58 +199,32 @@ module mkMyCFFifo( Fifo#(n, t) ) provisos (Bits#(t,tSz));
     (*no_implicit_conditions, fire_when_enabled*)
     rule canonicalize;
         // enq and deq
-        if ((nFull[0] && isValid(req_enq[1])) && (nEmpty[0] && req_deq[1])) begin
-            nEmpty[0] <= True;
-            nFull[0] <= True;
-            data[enqP[0]] <= fromMaybe(?, req_enq[1]);
-            enqP[0] <= nextEnqP;
-            deqP[0] <= nextDeqP;
-        // deq only
-        end else if (nEmpty[0] && req_deq[1]) begin
-            if (nextDeqP == enqP[0]) begin
-                notEmpty[0] <= False;
-            end
-            nFull[0] <= True;
-            deqP[0] <= nextDeqP;
-        // enq only
-        end else if (nFull[0] && isValid(req_enq[1])) begin
-            if (nextEnqP == deqP[0]) begin
-                nFull[0] <= False;
-            end
-            nEmpty[0] <= True;
-            data[enqP[0]] <= fromMaybe(?, req_enq[1]);
-            enqP[0] <= nextEnqP;
-        end
-        req_enq[1] <= tagged Invalid;
-        req_deq[1] <= False;
+   
     endrule
 
     method Bool notFull();
-        return nFull[0];
+        return True;
     endmethod
 
     method Action enq (t x) if (nFull[0]);
-        req_enq[0] <= tagged Valid (x);
+      
     endmethod
 
     method Bool notEmpty();
-        return nEmpty[0];
+        return True;
     endmethod
 
-    method Action deq() if (nEmpty[0]);
-        req_deq[0] <= True;
+    method Action deq() ;
+    
 
     endmethod
 
-    method t first() if (nEmpty[0]);
-        return data[deqP[0]];
+    method t first() ;
+        return data[0];
     endmethod
 
     method Action clear();
-        enqP[1] <= 0;
-        deqP[1] <= 0;
-        notEmpty[1] <= False;
-        notFull[1] <= True;
+       
     endmethod
 
 endmodule
