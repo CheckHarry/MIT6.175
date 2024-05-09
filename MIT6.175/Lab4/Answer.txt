@@ -1,0 +1,32 @@
+Q1:
+
+enq :
+enqP : RW
+deqP : R
+isEmpty : W
+isFull  : W
+
+deq :
+enqP : R
+deqP : RW
+isEmpty : W
+isFull  : W
+
+first :
+isEmpty : R
+deqP : R
+
+enq < deq because deqP
+and
+deq < enq because enqP
+
+so enq and deq are conflict
+
+for first , first < enq and first < deq because of isEmpty
+
+Q2: as a result , the conflict matrix is
+      first enq deq clear
+first X     <   <   <
+end   >     X   C   C
+deq   >     C   X   C
+clear >     C   C   X
