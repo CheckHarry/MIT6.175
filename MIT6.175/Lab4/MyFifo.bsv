@@ -76,47 +76,42 @@ module mkMyPipelineFifo( Fifo#(n, t) ) provisos (Bits#(t,tSz));
     endmethod
 
     method Action deq() if (nEmpty[0]);
+        Bit#(TLog#(n)) next_deqP = (deqP[0] == size) ? 0 : deqP[0] + 1;
+            
+        if (enqP[0] == next_deqP) nEmpty[0] <= False;
+        deqP[0] <= next_deqP;
         nFull[0] <= True;
-        let nextDeqP = deqP[0] + 1;
-        if (nextDeqP > size) begin
-            nextDeqP = 0;
-        end
-        if (nextDeqP == enqP[0]) begin
-            nEmpty[0] <= False;
-        end
-        deqP[0] <= nextDeqP;
-    endmethod
-
-    // 1
-
-    method Bool notFull();
-        return nFull[1];
-    endmethod
-
-    method Action enq (t x) if (nFull[1]);
-        nEmpty[1] <= True;
-        data[enqP[1]] <= x;
-        let nextEnqP = enqP[1] + 1;
-        if (nextEnqP > size) begin
-            nextEnqP = 0;
-        end
-        if (nextEnqP == deqP[1]) begin
-            nFull[1] <= False;
-        end
-        enqP[1] <= nextEnqP;
+        //$display("%d , %d \n" , deqP[0] , enqP[0]);
     endmethod
 
     method t first() if (nEmpty[0]);
         return data[deqP[0]];
     endmethod
 
+    // 1
+
+    method Bool notFull();
+       return nFull[1];
+    endmethod
+
+    method Action enq (t x) if (nFull[1]);
+        data[enqP[1]] <= x;
+
+        Bit#(TLog#(n)) next_enqP = (enqP[1] == size) ? 0 : enqP[1] + 1;
+        if (next_enqP == deqP[1]) nFull[1] <= False;
+        enqP[1] <= next_enqP;
+        nEmpty[1] <= True;
+    endmethod
+
+    
+
     // 2
 
     method Action clear();
-        deqP[2]     <= 0;
-        enqP[2]     <= 0;
+        enqP[2] <= 0;
+        deqP[2] <= 0;
         nEmpty[2] <= False;
-        nFull[2]  <= True;
+        nFull[2] <= True;
     endmethod
 
 endmodule
