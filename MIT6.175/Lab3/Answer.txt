@@ -1,0 +1,7 @@
+Q1:
+By the test bench , unsigned integer is not equal to signed integer.
+
+Q2:
+Basically the compiler fail to do type deduction on generic function.
+line "function Bit#(16) test_function( Bit#(8) a, Bit#(8) b ) = multiply_unsigned( a, b );"
+tell the compiler that the ref_function two operand type are both Bit#(8).
