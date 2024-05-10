@@ -30,3 +30,12 @@ first X     <   <   <
 end   >     X   C   C
 deq   >     C   X   C
 clear >     C   C   X
+
+
+Q4. 
+as 
+enq() read notFull[0]
+and
+deq() read notEmpty[0]
+
+so in clear , setting writing to notFull[1] and notEmpty[1] will result as {enq , deq} < clear
